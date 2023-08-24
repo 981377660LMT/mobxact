@@ -696,6 +696,7 @@ const directProperties: { [key: string]: string } = {
   placeholder: 'placeholder',
 };
 
+// DOM 的 Reconciler
 export const html = new Reconciler<Node, HTMLElement, Text>({
   createElement(tag: string) {
     return document.createElement(tag);
@@ -708,6 +709,7 @@ export const html = new Reconciler<Node, HTMLElement, Text>({
     parentContext: Reconciler<Node>,
     tag: string
   ): Reconciler<Node> | null {
+    // 暂时简单处理svg
     if (tag === 'svg') {
       return svg;
     }
@@ -722,10 +724,13 @@ export const html = new Reconciler<Node, HTMLElement, Text>({
 
   setProperty(dom: HTMLElement, key: string, v: unknown): void {
     if (typeof v === 'function') {
+      // callback暂时未做处理, 当作属性直接设置
       (dom as any)[key.toLowerCase()] = v;
     } else if (directProperties[key]) {
+      // 输入框的value, className, autoFocus, placeholder
       (dom as any)[directProperties[key]] = v;
     } else if (key === 'checked' || key === 'disabled') {
+      // html 的 checked, disabled
       if (v) {
         dom.setAttribute(key, key);
       } else {

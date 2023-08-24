@@ -5,7 +5,7 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "start": "webpack serve --mode=development"
+    "dev": "webpack serve --mode=development"
   },
   "devDependencies": {
     "html-webpack-plugin": "^5.5.0",

@@ -6,6 +6,7 @@ const pkg = require('./package.json');
 module.exports = [
   {
     input: 'src/index.ts',
+
     output: [
       {
         file: pkg.main,
@@ -24,16 +25,18 @@ module.exports = [
         },
       },
     ],
+
     external: [
       ...Object.keys(pkg.dependencies || {}),
       ...Object.keys(pkg.peerDependencies || {}),
     ],
+
     plugins: [
       typescript(),
       clear({
         targets: ['dist'],
       }),
-      terser(),
+      // terser(),
     ],
   },
 ];

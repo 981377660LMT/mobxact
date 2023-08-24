@@ -8,8 +8,9 @@ const rootEl = document.createElement('div');
 document.body.appendChild(rootEl);
 
 const start = Date.now();
-// html.render(<Counter />, rootEl);
-// html.render(<Todo />, rootEl);
+html.render(<Counter />, rootEl);
+html.render(<Todo />, rootEl);
 html.render(<CssDemo />, rootEl);
+html.render(<SvgTest />, rootEl);
 
 console.log(Date.now() - start);

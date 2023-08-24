@@ -1,3 +1,23 @@
+// 为什么有vDom?
+//
+// 1. 我们要有 update:
+//   text 发生变化
+//   DOM 上的属性发生变化(在vDom上绑定，但是变化过程不通过vDom)
+//   列表发生变化 - 最复杂部分
+// 2. 我们要有 基本的生命周期：
+//   init: 唯一一次发起render的时候(对外部的api)
+//   mount: 可能会被移动(内部的私有方法)
+//   unmount：可能会被移动(内部的私有方法)
+//   dispose: 组件不再被需要的时候(对外部的api)
+// 3. 实际上做了三种VDom的实现：
+//   DOMMountPoint: 关联一个真正的DOM Element
+//   VirtualMountPoint: 唯一关心Element的部分，同时负责TextNode的渲染更新
+//   ListMountPoint: 处理数组/列表渲染
+//
+// 注意：
+// 1.如果child中出现了BoxedObservable，那么会有一层额外的VirtualMountPoint去负责订阅
+// 2.每个ListMountPoint中的VirtualMountPoint都会报告首个DOM是啥，然后就知道了before是啥
+
 import {
   isBoxedObservable,
   isComputed,
@@ -29,6 +49,7 @@ export interface IMountPoint<
   mount(parent: ElementType, before: () => NodeType | null): void;
 
   // unmount self, do not unmount children.
+  // 注意unmount不会unmount children。主要用于移动.
   unmount(): void;
 
   // dispose self and all children.
@@ -51,14 +72,19 @@ export class DOMMountPoint<
     readonly reconciler: Reconciler<NodeType>,
     tag: string,
     props: any,
+    /**
+     * 告诉外部渲染出来的DOM是什么
+     */
     readonly onMountedDomChanged: (v: NodeType | null) => void
   ) {
+    // 是否需要切换环境
     this.childReconciler = (reconciler.host.getChildHostContext?.(
       reconciler,
       tag
     ) ?? reconciler) as Reconciler<NodeType, ElementType, TextNodeType>;
     const dom = (this._dom = this.childReconciler.host.createElement(tag));
 
+    // props绑定
     if (props) {
       for (const key of Object.keys(props)) {
         const value = props[key];
@@ -66,14 +92,17 @@ export class DOMMountPoint<
           this._ref = value;
           continue;
         }
+
         if (key === 'children') {
           continue;
         }
+
         if (key === 'style') {
           for (const key of Object.keys(value)) {
             const cssValue = value[key];
             if (isBoxedObservable(cssValue) || isComputed(cssValue)) {
               this.disposes.push(
+                // 创建一个reaction订阅，当cssValue变化的时候，调用reconciler的setCSSProperty方法
                 reaction(
                   () => cssValue.get(),
                   (v) => {
@@ -90,6 +119,7 @@ export class DOMMountPoint<
           }
           continue;
         }
+
         if (isBoxedObservable(value) || isComputed(value)) {
           this.disposes.push(
             reaction(
@@ -106,6 +136,8 @@ export class DOMMountPoint<
           this.reconciler.host.setProperty(dom, key, value);
         }
       }
+
+      // !有children的话，需要创建一个ListMountPoint
       if (props.children) {
         const mp = new ListMountPoint(
           this.childReconciler,
@@ -118,22 +150,26 @@ export class DOMMountPoint<
 
     this.updateRef(dom);
   }
+
   disposes: IReactionDisposer[] = [];
 
   children?: IMountPoint;
 
   parent?: ElementType;
 
+  // before由ListMountPoint提供
   mount(parent: ElementType, before: () => NodeType | null) {
     this.parent = parent;
-    this.onMountedDomChanged(this._dom);
+    this.onMountedDomChanged(this._dom); // 把真实的dom传出去
     this.reconciler.host.insertBefore(parent, this._dom, before());
   }
+
   unmount() {
-    this.onMountedDomChanged(null);
+    this.onMountedDomChanged(null); // 维护的是List中的dom，所以这里需要销毁
     this.reconciler.host.removeChild(this.parent!, this._dom);
     delete this.parent;
   }
+
   dispose() {
     for (const item of this.disposes) {
       item();
@@ -195,6 +231,7 @@ export class VirtualMountPoint<
       this.reconciler.host.setTextContent(this.textDom, ch.toString());
       return;
     }
+
     if (
       this.childMountPoint instanceof ListMountPoint &&
       (Array.isArray(ch) || isObservableArray(ch))
@@ -202,6 +239,8 @@ export class VirtualMountPoint<
       (this.childMountPoint as ListMountPoint).update(ch);
       return;
     }
+
+    // 没有rerender,不做dom diff, 直接重新创建
     this.unmountChildren();
     this.disposeChildren();
     if (isElement(ch)) {
@@ -332,7 +371,7 @@ export class ListMountPoint<
           item,
           (v) => this.onChildMountedDomChanged(mp, v)
         );
-      mp.mountIndex = idx++;
+      mp.mountIndex = idx++; // 反向查询，直接作为props性能更好
       this.children.push(mp);
     }
     this.updating = false;

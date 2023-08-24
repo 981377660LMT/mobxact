@@ -12,7 +12,7 @@ import {
   Element,
   computedMapperFn,
   createRef,
-  observeUmount,
+  observeUnmount,
 } from 'mobxact';
 
 export function List<T>({
@@ -35,7 +35,7 @@ export function Item({
   item: TodoItem;
   state: IObservableArray<TodoItem>;
 }) {
-  return observeUmount(
+  return observeUnmount(
     <div>
       <input
         type="checkbox"
@@ -52,7 +52,7 @@ export function Item({
         })}
       />
       <button
-        onclick={() => {
+        onClick={() => {
           const start = Date.now();
           runInAction(() => {
             state.remove(item);
@@ -64,7 +64,7 @@ export function Item({
         delete
       </button>
       <button
-        onclick={() => {
+        onClick={() => {
           const start = Date.now();
           runInAction(() => {
             const idx = state.indexOf(item);
@@ -98,7 +98,7 @@ export function Todo() {
         renderItem={(item) => <Item item={item} state={state} />}
       ></List>
       <button
-        onclick={() => {
+        onClick={() => {
           runInAction(() => {
             const start = Date.now();
             state.push(

@@ -26,7 +26,7 @@ function lis(arr: number[]) {
   for (; i < len; ++i) {
     arrI = arr[i];
 
-    if (arrI !== 0) {
+    if (arrI) {
       j = result[k];
       if (arr[j] < arrI) {
         p[i] = j;
@@ -68,13 +68,12 @@ function lis(arr: number[]) {
   return seq;
 }
 
-export function calcKeepList(order: number[], n: number) {
-  const keep = new Array(n).fill(false);
+export function calcKeepList(order: number[], n: number): Uint8Array {
+  const keep = new Uint8Array(n);
   if (order.length > 0) {
     const l = lis(order);
-
     for (let i = 0; i < l.length; i++) {
-      keep[order[l[i]]] = true;
+      keep[order[l[i]]] = 1;
     }
   }
   return keep;

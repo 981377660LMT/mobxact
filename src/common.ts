@@ -6,7 +6,6 @@ import {
   isComputed,
   onBecomeUnobserved,
 } from 'mobx';
-import { AttributeRecord, CSSProperties } from './types';
 
 export interface IBoxedValue<T> {
   get(): T;
@@ -20,14 +19,17 @@ export function createRef<T>() {
   return observable.box<T | null>(null);
 }
 
+/** 可以是一个值，也可以是一个 observable */
 export type Child =
   | ValueOrObservable<
       Element | string | boolean | number | null | undefined | Children
     >
   | IBoxedValue<Child>;
+/** 可以是一个值，也可以是一个 observable */
 export type Children = Child[];
 export type JSXNode = Child | Children;
 
+// 简单的函数组件类型
 export type ComponentType<PropType = {}> = (
   props: PropType
 ) => Child | Children;

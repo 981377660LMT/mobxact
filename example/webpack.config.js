@@ -13,7 +13,7 @@ module.exports = (_, argv) => {
       filename: __DEV__ ? '[name].js' : '[name].[contenthash].js',
       chunkFilename: __DEV__ ? '[id].js' : '[id].[contenthash].js',
     },
-    devtool: __DEV__ ? 'eval-source-map' : false,
+    devtool: __DEV__ ? 'source-map' : false,
     context: __dirname,
     resolve: {
       extensions: ['.ts', '.tsx', '.js'],
