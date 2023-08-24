@@ -3,14 +3,17 @@ const clear = require('rollup-plugin-clear');
 const terser = require('@rollup/plugin-terser');
 const pkg = require('./package.json');
 
-module.exports = [
+/**
+ * @type {import('rollup').RollupOptions[]}
+ */
+const config = [
   {
     input: 'src/index.ts',
-
     output: [
       {
         file: pkg.main,
         format: 'cjs',
+        sourcemap: true, // 方便debug
       },
       {
         file: pkg.module,
@@ -25,12 +28,10 @@ module.exports = [
         },
       },
     ],
-
     external: [
       ...Object.keys(pkg.dependencies || {}),
       ...Object.keys(pkg.peerDependencies || {}),
     ],
-
     plugins: [
       typescript(),
       clear({
@@ -40,3 +41,5 @@ module.exports = [
     ],
   },
 ];
+
+module.exports = config;
